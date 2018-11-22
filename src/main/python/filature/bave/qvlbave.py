@@ -164,6 +164,9 @@ class QuadraticVertex(object):
                self.__a * self.__b * (x ** 2) + (self.__a * (x ** 3)) / 3
 
     def x_intersection(self):
+        """
+        :return: the y coordinate for intersection with x
+        """
         t = - self.__c / self.__a
         if t < 0:
             return ()
@@ -173,12 +176,22 @@ class QuadraticVertex(object):
             return self.__b + math.sqrt(t), self.__b - math.sqrt(t)
 
     def y_intersection(self):
+        """
+        :return: the intersection with y
+        """
         return self.__a * self.__b ** 2 + self.__c
 
     def vertex(self):
+        """
+
+        :return: the vertex coordinate
+        """
         return self.__b, self.__c
 
     def is_invert(self):
+        """
+        :return: whether is invert
+        """
         if self.__a > 0:
             return False
         elif self.__a < 0:
