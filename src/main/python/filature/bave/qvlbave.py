@@ -1,4 +1,5 @@
 # --*-- coding:utf-8 --*--
+
 """
 The model for bave with the composite function of
 vertex quadratic function and logistic function.
@@ -9,6 +10,7 @@ from __future__ import division, print_function
 import math
 
 import numpy as np
+from scipy import integrate
 
 
 def quadratic_vertex(x, a, b, c):
@@ -385,16 +387,16 @@ class QVLFunction(object):
 
 
 class QVLBave(object):
-    """The Composite function model (vertex form of quadratic function and logistic function) of bave
+    """
+    The Composite function model (vertex form of quadratic function and logistic function) of bave
     """
 
     def __init__(self, qvlbave_length, initial_size, alpha, beta):
         """
-
-        :param qvlbave_length:
+        :param qvlbave_length: the length of bave
+        :param initial_size: the initial size of bave
         :param alpha:
         :param beta:
-        :param gamma:
         """
         self.__qvlbave_length = qvlbave_length
         self.__initial_size = initial_size
@@ -404,23 +406,20 @@ class QVLBave(object):
     @property
     def qvlbave_length(self):
         """
-
-        :return:
+        :return:the length of bave
         """
         return self.__qvlbave_length
 
     @property
     def initial_size(self):
         """
-
-        :return:
+        :return:the initial size of bave
         """
         return self.__initial_size
 
     @property
     def alpha(self):
         """
-
         :return:
         """
         return self.__alpha
@@ -428,7 +427,6 @@ class QVLBave(object):
     @property
     def beta(self):
         """
-
         :return:
         """
         return self.__beta
@@ -436,56 +434,136 @@ class QVLBave(object):
     @property
     def quadratic_vertex_a(self):
         """
-
-        :return:
+        :return:The parameter {a} of quadratic function (vertex form)
         """
-        return self.__initial_size * (1 - self.__alhpa) * (1 + np.exp(self.logistic_k * self.__beta * self.qvlbave_length)) / (
-                self.qvlbave_length ** 2)
+        return self.__initial_size * (1 - self.__alhpa) * (
+                1 + np.exp(self.logistic_k * self.__beta * self.qvlbave_length)) / (
+                       self.qvlbave_length ** 2)
 
     @property
     def quadratic_vertex_b(self):
         """
-
-        :return:
+        :return:The parameter {b} of quadratic function (vertex form)
         """
         return self.qvlbave_length
 
     @property
     def quadratic_vertex_c(self):
+        """
+        :return: The parameter {b} of quadratic function (vertex form)
+        """
         return 0
 
     @property
     def logistic_m(self):
         """
-        :return:
+        :return:The parameter {m} of logistic function
         """
         return 1
 
     @property
     def logistic_k(self):
         """
-        :return:
+        :return:The parameter {k} of logistic function
         """
         return 4 / (self.qvlbave_length * (1 - self.__beta))
 
     @property
     def logistic_x0(self):
         """
-        :return:
+        :return:The parameter {x0} of logistic function
         """
         return self.qvlbave_length * self.__beta
 
     @property
     def qvl_d(self):
+        """
+        :return: The parameter {d} of qvl model (Quadratic Vertex and logistic)
+        """
         return self.__alhpa * self.__initial_size
 
     @property
     def quadratic_vertex(self):
+        """
+        :return: The vertex form of quadratic function
+        """
         return QuadraticVertex(self.quadratic_vertex_a, self.quadratic_vertex_b, self.quadratic_vertex_c)
 
     @property
     def logistic(self):
+        """
+        :return: The logistic function
+        """
         return Logistic(self.logistic_m, self.logistic_k, self.logistic_x0)
 
     def value(self, x):
+        """
+        :param x: independent variable
+        :return: The value of composite function
+        """
         return self.quadratic_vertex.value(x) * self.logistic.value(x) + self.qvl_d
+
+    def bave_size(self, pos):
+        if 0 <= pos <= self.__qvlbave_length:
+            return self.value(pos)
+        else:
+            raise Exception("Expected the parameter {0 <= pos <= %f},but got {pos = %f}" % (self.__qvlbave_length, pos))
+
+    @staticmethod
+    def apply(x, qvlbave_length, initial_size, alpha, beta):
+        return QVLBave(qvlbave_length, initial_size, alpha, beta).value(x)
+
+    def integrate_romberg(self, *args):
+        if len(args) == 0:
+            lower = 0
+            upper = self.qvlbave_length
+        elif len(args) == 1:
+            lower = args[0]
+            upper = self.qvlbave_length
+        else:
+            lower = args[0]
+            upper = args[1]
+
+        return integrate.romberg(self.value, lower, upper)
+
+    def average(self, *args):
+        if len(args) == 0:
+            lower = 0
+            upper = self.qvlbave_length
+        elif len(args) == 1:
+            lower = args[0]
+            upper = self.qvlbave_length
+        else:
+            lower = args[0]
+            upper = args[1]
+        return self.integrate_romberg(lower, upper) / (upper - lower)
+
+    def var_function(self, x, *args):
+        if len(args) == 0:
+            lower = 0
+            upper = self.qvlbave_length
+        elif len(args) == 1:
+            lower = args[0]
+            upper = self.qvlbave_length
+        else:
+            lower = args[0]
+            upper = args[1]
+        average = self.average(lower, upper)
+        if x < lower or x > upper:
+            raise Exception("Expected the parameter {%f <= x <= %f},but got {x = %f}" % (lower, upper, x))
+        return (self.value(x) - average) ** 2
+
+    def var(self, *args):
+        if len(args) == 0:
+            lower = 0
+            upper = self.qvlbave_length
+        elif len(args) == 1:
+            lower = args[0]
+            upper = self.qvlbave_length
+        else:
+            lower = args[0]
+            upper = args[1]
+        return integrate.romberg(self.var_function, lower, upper) / (upper - lower)
+
+    def std(self, *args):
+        return math.sqrt(self.var(*args))
