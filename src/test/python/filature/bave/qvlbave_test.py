@@ -3,7 +3,6 @@
 from __future__ import division, print_function
 
 import numpy as np
-import matplotlib.pyplot as plt
 from filature.bave import qvlbave
 
 x = np.array([0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200])
@@ -18,7 +17,3 @@ print(qvlbave.quadratic_vertex(x, a, b, c))
 print(qvlbave.logistic(x, m, k, x0))
 print(qvlbave.qvl_function(x, a, b, c, m, k, x0))
 
-plt.figure(figsize=(12.0, 6))
-
-plt.plot(x, qvlbave.qvl_function(x, a, b, c, m, k, x0), '-*')
-plt.show()

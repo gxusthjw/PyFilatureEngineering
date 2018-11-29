@@ -391,17 +391,17 @@ class QVLBave(object):
     The Composite function model (vertex form of quadratic function and logistic function) of bave
     """
 
-    def __init__(self, qvlbave_length, initial_size, alpha, beta):
+    def __init__(self, qvlbave_length, initial_size, max_size_pos, terminal_size):
         """
         :param qvlbave_length: the length of bave
         :param initial_size: the initial size of bave
-        :param alpha:
-        :param beta:
+        :param max_size_pos:the max size pos on bave
+        :param terminal_size:the terminal size of bave
         """
         self.__qvlbave_length = qvlbave_length
         self.__initial_size = initial_size
-        self.__alhpa = alpha
-        self.__beta = beta
+        self.__max_size_pos = max_size_pos
+        self.__terminal_size = terminal_size
 
     @property
     def qvlbave_length(self):
@@ -418,26 +418,54 @@ class QVLBave(object):
         return self.__initial_size
 
     @property
+    def max_size_pos(self):
+        """
+        :return: the max size pos on bave
+        """
+        return self.__max_size_pos
+
+    @property
+    def terminal_size(self):
+        """
+        :return: the terminal size of bave
+        """
+        return self.__terminal_size
+
+    @property
+    def tan(self):
+        """
+        :return: The ratio of terminal size and length of bave
+        """
+        return self.terminal_size / self.qvlbave_length
+
+    @property
+    def tan1(self):
+        """
+        :return:(self.initial_size - self.terminal_size) / self.qvlbave_length
+        """
+        return (self.initial_size - self.terminal_size) / self.qvlbave_length
+
+    @property
     def alpha(self):
         """
-        :return:
+        :return:the ratio of terminal_size and initial_size
         """
-        return self.__alpha
+        return self.self.__terminal_size / self.__initial_size
 
     @property
     def beta(self):
         """
-        :return:
+        :return:the ratio of max_size_pos and length of bave
         """
-        return self.__beta
+        return self.self.__max_size_pos / self.qvlbave_length
 
     @property
     def quadratic_vertex_a(self):
         """
         :return:The parameter {a} of quadratic function (vertex form)
         """
-        return self.__initial_size * (1 - self.__alhpa) * (
-                1 + np.exp(self.logistic_k * self.__beta * self.qvlbave_length)) / (
+        return self.initial_size * (1 - self.alhpa) * (
+                1 + np.exp(self.logistic_k * self.beta * self.qvlbave_length)) / (
                        self.qvlbave_length ** 2)
 
     @property
@@ -466,21 +494,28 @@ class QVLBave(object):
         """
         :return:The parameter {k} of logistic function
         """
-        return 4 / (self.qvlbave_length * (1 - self.__beta))
+        return 4 / (self.qvlbave_length * (1 - self.beta))
 
     @property
     def logistic_x0(self):
         """
         :return:The parameter {x0} of logistic function
         """
-        return self.qvlbave_length * self.__beta
+        return self.qvlbave_length * self.beta
 
     @property
     def qvl_d(self):
         """
         :return: The parameter {d} of qvl model (Quadratic Vertex and logistic)
         """
-        return self.__alhpa * self.__initial_size
+        return self.alhpa * self.initial_size
+
+    @property
+    def max_size(self):
+        """
+        :return: the max size of bave
+        """
+        return (self.quadratic_vertex_a * ((self.max_size_pos - self.quadratic_vertex_b) ** 2)) / 2 + self.qvl_d
 
     @property
     def quadratic_vertex(self):
@@ -488,6 +523,17 @@ class QVLBave(object):
         :return: The vertex form of quadratic function
         """
         return QuadraticVertex(self.quadratic_vertex_a, self.quadratic_vertex_b, self.quadratic_vertex_c)
+
+    @property
+    def tan2(self):
+        return self.max_size_pos / self.qvlbave_length
+
+    @property
+    def tan3(self):
+        """
+        :return: (self.max_size - self.initial_size) / self.max_size_pos
+        """
+        return (self.max_size - self.initial_size) / self.max_size_pos
 
     @property
     def logistic(self):
@@ -504,14 +550,10 @@ class QVLBave(object):
         return self.quadratic_vertex.value(x) * self.logistic.value(x) + self.qvl_d
 
     def bave_size(self, pos):
-        if 0 <= pos <= self.__qvlbave_length:
+        if 0 <= pos <= self.qvlbave_length:
             return self.value(pos)
         else:
             raise Exception("Expected the parameter {0 <= pos <= %f},but got {pos = %f}" % (self.__qvlbave_length, pos))
-
-    @staticmethod
-    def apply(x, qvlbave_length, initial_size, alpha, beta):
-        return QVLBave(qvlbave_length, initial_size, alpha, beta).value(x)
 
     def integrate_romberg(self, *args):
         if len(args) == 0:
@@ -567,3 +609,11 @@ class QVLBave(object):
 
     def std(self, *args):
         return math.sqrt(self.var(*args))
+
+
+class QVLBave2(QVLBave):
+    def __init__(self, qvlbave_length, tan, tan1, tan2):
+        terminal_size = tan * qvlbave_length
+        initial_size = tan1 * qvlbave_length + tan * qvlbave_length
+        max_size_pos = tan2 * qvlbave_length
+        super(QVLBave2, self).__init__(qvlbave_length, initial_size, max_size_pos, terminal_size)
